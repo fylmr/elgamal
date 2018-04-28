@@ -3,8 +3,13 @@ import random
 from numtheory import NumTheory
 
 
-class ElGamalEncryption:
+class ElGamalSign:
     def __init__(self, message):
+        """
+        El Gamal digital signature signer.
+
+        :param message: String to be encrypted.
+        """
         logging.basicConfig(format='%(levelname)s, %(lineno)d: %(message)s', level=logging.INFO)
         logging.debug("Started El Gamal Encryption.")
 
@@ -27,9 +32,9 @@ class ElGamalEncryption:
         """
         Generates public key (p, g, b) and private key x. \n
 
-        p is the prime
-        g is the primitive root
-        b = g ^ x mod p
+        p is a prime
+        g is a primitive root of p
+        b = g^x mod p
 
         x is random in [0, p-1]
 
@@ -51,10 +56,22 @@ class ElGamalEncryption:
         return publicKey, privateKey
 
     def check_message_len(self, M):
+        """
+        Check if message is longer than modulo.
+
+        :param M: int message
+        :raises: ValueError
+        """
         if M >= self.p:
             raise ValueError("Message is longer than modulo.")
 
     def sign(self):
+        """
+        Actual method to sign message.
+
+        :returns: signature (y, s)
+        """
+
         h = self.messageHash
         self.check_message_len(h)
 
@@ -71,3 +88,4 @@ class ElGamalEncryption:
         s = ((h - self.x * y) * rInv) % (self.p - 1)
 
         self.signature = (y, s)
+        return self.signature

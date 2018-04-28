@@ -2,7 +2,7 @@ import logging
 from numtheory import NumTheory
 
 
-class ElGamalDecryption:
+class ElGamalSignatureChecker:
     def __init__(self, message, publickey, signature):
         """
         ElGamal decryption client.
@@ -14,7 +14,6 @@ class ElGamalDecryption:
         logging.debug("Started El Gamal Decryption.")
 
         hashFunc = NumTheory().hash
-        # logging.info("{0} {1}".format(publickey, signature))
 
         self.publicKey = publickey
         self.signature = signature

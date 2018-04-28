@@ -10,9 +10,21 @@ class NumTheory:
 
     @staticmethod
     def hex_to_int(h):
+        """
+        Converts hexadecimal to integer.
+
+        :param h: hex string
+        :return: conveted int
+        """
         return int(h, 16)
 
     def hash(self, s: str):
+        """
+        Makes parameter hash via SHA-1.
+
+        :param s: string
+        :return: int of hex hash
+        """
         h = hashlib.sha1()
         h.update(s.encode(encoding='utf-8'))
 
@@ -21,7 +33,8 @@ class NumTheory:
     @staticmethod
     def inv_modulo(a, m):
         """
-        Get inverted number by modulo m
+        Get modulo inverse.
+
         :param a: number to inverse
         :param m: modulo
         :return:
@@ -37,6 +50,12 @@ class NumTheory:
 
     @staticmethod
     def gcd(a, b):
+        """
+        Calculate GCD of a and b
+        :param a:
+        :param b:
+        :return: gcd(a, b)
+        """
         logging.debug("GCD of {0} and {1}".format(a, b))
 
         if a == 0 or b == 0:
@@ -54,6 +73,15 @@ class NumTheory:
 
     @staticmethod
     def modexp(base, exp, modulus):
+        """
+        Modulo exponent.
+        base^exp mod modulus
+
+        :param base:
+        :param exp:
+        :param modulus:
+        :return:
+        """
         return pow(base, exp, modulus)
 
     def jacobi(self, a, n):
@@ -134,7 +162,7 @@ class NumTheory:
         logging.debug("{0} is prime".format(num))
         return True
 
-    def find_prime(self, iNumBits=64, iConfidence=32):
+    def find_prime(self, iNumBits=256, iConfidence=32):
         """
         Find n-bit prime.
 
@@ -166,7 +194,7 @@ class NumTheory:
 
     def find_primitive_root(self, p):
         """
-        finds a primitive root for prime p.
+        Finds a random primitive root for prime p.
 
         :param p: modulo
         :return:

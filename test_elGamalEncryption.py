@@ -1,18 +1,18 @@
 from unittest import TestCase
-from elgamalDS_encryption import ElGamalEncryption
-from elgamalDS_decryption import ElGamalDecryption
+from elgamalDS_encryption import ElGamalSign
+from elgamalDS_decryption import ElGamalSignatureChecker
 
 
 class TestElGamalSignature(TestCase):
     def try_signature(self, message):
-        elgamalenc = ElGamalEncryption(message)
+        elgamalenc = ElGamalSign(message)
 
         elgamalenc.sign()
 
         publicKey = elgamalenc.publicKey
         signature = elgamalenc.signature
 
-        elgamaldec = ElGamalDecryption(message, publicKey, signature)
+        elgamaldec = ElGamalSignatureChecker(message, publicKey, signature)
 
         self.assertTrue(elgamaldec.check())
 
