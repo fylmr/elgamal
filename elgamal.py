@@ -1,8 +1,6 @@
-# Implementation of the ElGamal Cryptosystem
-# Author: Ryan Riddle (ryan.riddle@uky.edu)
-# Date of Completion: April 20, 2012
+# Author: Ryan Riddle
 
-# DESCRIPTION AND IMPLEMENTATION
+# Описание и применение
 #
 # This python program implements the ElGamal cryptosystem.  The program is capable of both
 # encrypting and decrypting a message.  At execution the user will be prompted for three things:

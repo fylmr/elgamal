@@ -1,8 +1,12 @@
 import logging
 import random
+import hashlib
 
 
 class NumTheory:
+
+    def __init__(self):
+        logging.basicConfig(level=logging.info)
 
     def inv_modulo(self, a, m):
         """
@@ -96,7 +100,7 @@ class NumTheory:
         :param iConfidence: times to repeat test
         :return: bool
         """
-        logging.info("Testing {0} for primality ".format(num))
+        logging.debug("Testing {0} for primality ".format(num))
 
         if num == 1:
             return False
@@ -106,12 +110,12 @@ class NumTheory:
 
             # if a is not relatively prime to n, n is composite
             if self.gcd(a, num) > 1:
-                logging.info("{0} is composite".format(num))
+                logging.debug("{0} is composite".format(num))
                 return False
 
             # declares n prime if jacobi(a, n) is congruent to a^((n-1)/2) mod n
             if not self.jacobi(a, num) % num == self.modexp(a, (num - 1) // 2, num):
-                logging.info("{0} is composite".format(num))
+                logging.debug("{0} is composite".format(num))
                 return False
 
         # if there have been t iterations without failure, num is believed to be prime
@@ -167,7 +171,7 @@ class NumTheory:
         p2 = (p - 1) // p1
 
         # test random g's until one is found that is a primitive root mod p
-        while (1):
+        while 1:
             g = random.randint(2, p - 1)
             # g is a primitive root if for all prime factors of p-1, p[i]
             # g^((p-1)/p[i]) (mod p) is not congruent to 1
@@ -178,6 +182,8 @@ class NumTheory:
 
 class ElGamalEncryption:
     def __init__(self):
+        logging.basicConfig(format='%(levelname)s, %(lineno)d: %(message)s', level=logging.INFO)
+
         self.numTheory = NumTheory()
 
         keys = self.generate_keys()
@@ -186,6 +192,10 @@ class ElGamalEncryption:
         self.b = keys[0][2]
 
         self.x = keys[1]
+
+    @staticmethod
+    def hex_to_int(h):
+        return int(h, 16)
 
     def generate_keys(self, iNumBits=64, iConfidence=32):
         """
@@ -213,17 +223,27 @@ class ElGamalEncryption:
         publicKey = (p, g, b)
         privateKey = x
 
+        logging.debug("{0}, {1}".format(publicKey, privateKey))
         return (publicKey, privateKey)
 
     def check_message_len(self, message):
         if len(str(message)) >= self.p:
             raise ValueError("Message is longer than modulo.")
 
+    def hash(self, s: str):
+        h = hashlib.sha1()
+        h.update(s.encode(encoding='utf-8'))
+
+        return self.hex_to_int(h.hexdigest())
+
     def sign(self, message):
-        self.check_message_len(message)
+        messageHash = self.hash(message)
+        logging.debug("Message hash: {0}".format(messageHash))
+
+        self.check_message_len(messageHash)
 
         # Generating r: r < p-1, gcd(r, p-1) = 1
-        r = random.randint(0, self.p - 1)
+        r = random.randint(0, self.p - 2)
         while self.numTheory.gcd(r, self.p - 1) != 1:
             r = random.randint(0, self.p - 1)
 
@@ -237,4 +257,6 @@ class ElGamalEncryption:
         # Calculating s = (message - a^y)(r^-1) mod p-1
         rInv = self.numTheory.inv_modulo(r, self.p - 1)
         # noinspection PyArgumentList
-        s = (message - pow(self.x, y, self.p - 1, self.p - 1)) * rInv % self.p - 1
+        s = (messageHash - pow(self.x, y, self.p - 1)) * rInv % self.p - 1
+
+        return (y, s)
