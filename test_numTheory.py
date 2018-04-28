@@ -1,3 +1,4 @@
+import logging
 from unittest import TestCase
 from elgamalDS import NumTheory
 
@@ -9,6 +10,9 @@ class TestNumTheory(TestCase):
     def test_inv_modulo(self):
         self.assertEqual(self.numMethods.inv_modulo(14, 17), 11)
         self.assertEqual(self.numMethods.inv_modulo(11, 17), 14)
+        self.assertEqual(self.numMethods.inv_modulo(10032020090948682085,
+                                                    15642007769692613422),
+                         8523566402957105883)
 
         with self.assertRaises(ValueError):
             self.numMethods.inv_modulo(1, 1)

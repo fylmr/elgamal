@@ -6,7 +6,17 @@ import hashlib
 class NumTheory:
 
     def __init__(self):
-        logging.basicConfig(level=logging.info)
+        logging.basicConfig(level=logging.INFO)
+
+    @staticmethod
+    def hex_to_int(h):
+        return int(h, 16)
+
+    def hash(self, s: str):
+        h = hashlib.sha1()
+        h.update(s.encode(encoding='utf-8'))
+
+        return self.hex_to_int(h.hexdigest())
 
     def inv_modulo(self, a, m):
         """
@@ -21,13 +31,14 @@ class NumTheory:
         if m - 2 < 0:
             raise ValueError("Modulo should be greater than 2")
 
-        return self.modexp(a, m - 2, m)
+        res = lambda A, n, s=1, t=0, N=0: (n < 2 and t % N or res(n, A % n, t, s - A // n * t, N or n), -1)[n < 1]
+        return res(a, m)
 
     @staticmethod
     def gcd(a, b):
         logging.debug("GCD of {0} and {1}".format(a, b))
 
-        if (a == 0 or b == 0):
+        if a == 0 or b == 0:
             raise ZeroDivisionError("Args should not be zero")
 
         if a < b:
@@ -181,10 +192,13 @@ class NumTheory:
 
 
 class ElGamalEncryption:
-    def __init__(self):
+    def __init__(self, message):
         logging.basicConfig(format='%(levelname)s, %(lineno)d: %(message)s', level=logging.INFO)
 
         self.numTheory = NumTheory()
+
+        self.message = message
+        self.messageHash = self.numTheory.hash(message)
 
         keys = self.generate_keys()
         self.p = keys[0][0]
@@ -193,9 +207,8 @@ class ElGamalEncryption:
 
         self.x = keys[1]
 
-    @staticmethod
-    def hex_to_int(h):
-        return int(h, 16)
+        self.publicKey = (self.g, self.b, self.p)
+        self.signature = (None, None)
 
     def generate_keys(self, iNumBits=64, iConfidence=32):
         """
@@ -230,33 +243,75 @@ class ElGamalEncryption:
         if len(str(message)) >= self.p:
             raise ValueError("Message is longer than modulo.")
 
-    def hash(self, s: str):
-        h = hashlib.sha1()
-        h.update(s.encode(encoding='utf-8'))
-
-        return self.hex_to_int(h.hexdigest())
-
-    def sign(self, message):
-        messageHash = self.hash(message)
-        logging.debug("Message hash: {0}".format(messageHash))
-
-        self.check_message_len(messageHash)
+    def sign(self):
+        h = self.messageHash
+        self.check_message_len(h)
+        logging.info(h)
 
         # Generating r: r < p-1, gcd(r, p-1) = 1
         r = random.randint(0, self.p - 2)
         while self.numTheory.gcd(r, self.p - 1) != 1:
             r = random.randint(0, self.p - 1)
 
-        logging.debug("Generated r: {0}".format(r))
-
         # Calculating y = g^r mod p
         y = self.numTheory.modexp(self.g, r, self.p)
 
-        logging.debug("Generated y: {0}".format(y))
-
-        # Calculating s = (message - a^y)(r^-1) mod p-1
+        # s = (message - a^y)(r^-1) mod p-1
         rInv = self.numTheory.inv_modulo(r, self.p - 1)
-        # noinspection PyArgumentList
-        s = (messageHash - pow(self.x, y, self.p - 1)) * rInv % self.p - 1
+        logging.info("r: {}, rinv: {}".format(r, rInv))
 
-        return (y, s)
+        s = (h - pow(self.x, y, self.p - 1)) * rInv % self.p - 1
+
+        logging.info("({} - {}^{})*{} mod {} = {}".format(h, self.x, y, rInv, (self.p - 1), s))
+
+        self.signature = (y, s)
+
+
+class ElGamalDecryption():
+    def __init__(self, message, publickey, signature):
+        """
+        ElGamal decryption client.
+
+        :param message: string
+        :param publickey: (g, b, p)
+        :param signature: (y, s)
+        """
+        hash = NumTheory().hash
+        # logging.info("{0} {1}".format(publickey, signature))
+
+        self.publicKey = publickey
+        self.signature = signature
+
+        self.message = message
+        self.messageHash = hash(message)
+
+    def check(self):
+        """
+        Checks if signature correct.
+
+        :return: True or False
+        """
+        modexp = NumTheory.modexp
+
+        g, b, p = self.publicKey
+        y, s = self.signature
+        h = self.messageHash
+
+        # y, s < p
+        if not (0 < y < p):
+            return False
+        if not (0 < s < p - 1):
+            logging.info("1")
+            return False
+
+        v1 = modexp(y, s, p) * modexp(b, y, p) % p
+        v2 = modexp(g, h, p)
+
+        if v1 == v2:
+            logging.info("2")
+
+            return True
+        else:
+            logging.info("{}, {}".format(v1, v2))
+
+            return False
