@@ -1,19 +1,22 @@
 from unittest import TestCase
-import elgamalDS
-import logging
+from elgamalDS_encryption import ElGamalEncryption
+from elgamalDS_decryption import ElGamalDecryption
 
 
 class TestElGamalSignature(TestCase):
-    def test_signature(self):
-        m1 = "Hello."
-
-        elgamalenc = elgamalDS.ElGamalEncryption(m1)
+    def try_signature(self, message):
+        elgamalenc = ElGamalEncryption(message)
 
         elgamalenc.sign()
 
         publicKey = elgamalenc.publicKey
         signature = elgamalenc.signature
 
-        elgamaldec = elgamalDS.ElGamalDecryption(m1, publicKey, signature)
+        elgamaldec = ElGamalDecryption(message, publicKey, signature)
 
         self.assertTrue(elgamaldec.check())
+
+    def test_signatures(self):
+        self.try_signature("Hello.")
+        self.try_signature("Привет, это более длинная строка, чем раньше.")
+        self.try_signature("Это строка на китайском языке: 你好吗")

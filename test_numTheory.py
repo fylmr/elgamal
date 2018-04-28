@@ -1,6 +1,5 @@
-import logging
 from unittest import TestCase
-from elgamalDS import NumTheory
+from numtheory import NumTheory
 
 
 class TestNumTheory(TestCase):

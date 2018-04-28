@@ -1,6 +1,6 @@
-import logging
 import random
 import hashlib
+import logging
 
 
 class NumTheory:
@@ -18,7 +18,8 @@ class NumTheory:
 
         return self.hex_to_int(h.hexdigest())
 
-    def inv_modulo(self, a, m):
+    @staticmethod
+    def inv_modulo(a, m):
         """
         Get inverted number by modulo m
         :param a: number to inverse
@@ -189,129 +190,3 @@ class NumTheory:
             if not (self.modexp(g, (p - 1) // p1, p) == 1):
                 if not self.modexp(g, (p - 1) // p2, p) == 1:
                     return g
-
-
-class ElGamalEncryption:
-    def __init__(self, message):
-        logging.basicConfig(format='%(levelname)s, %(lineno)d: %(message)s', level=logging.INFO)
-
-        self.numTheory = NumTheory()
-
-        self.message = message
-        self.messageHash = self.numTheory.hash(message)
-
-        keys = self.generate_keys()
-        self.p = keys[0][0]
-        self.g = keys[0][1]
-        self.b = keys[0][2]
-
-        self.x = keys[1]
-
-        self.publicKey = (self.g, self.b, self.p)
-        self.signature = (None, None)
-
-    def generate_keys(self, iNumBits=64, iConfidence=32):
-        """
-        Generates public key (p, g, b) and private key x. \n
-
-        p is the prime
-        g is the primitive root
-        b = g ^ x mod p
-
-        x is random in [0, p-1]
-
-        :param iNumBits:
-        :param iConfidence:
-        :return: ((p, g, b), x)
-        """
-
-        p = self.numTheory.find_prime(iNumBits, iConfidence)
-        g = self.numTheory.find_primitive_root(p)
-        g = self.numTheory.modexp(g, 2, p)  # todo check this
-
-        x = random.randint(1, (p - 1) // 2)
-
-        b = self.numTheory.modexp(g, x, p)
-
-        publicKey = (p, g, b)
-        privateKey = x
-
-        logging.debug("{0}, {1}".format(publicKey, privateKey))
-        return (publicKey, privateKey)
-
-    def check_message_len(self, message):
-        if len(str(message)) >= self.p:
-            raise ValueError("Message is longer than modulo.")
-
-    def sign(self):
-        h = self.messageHash
-        self.check_message_len(h)
-        logging.info(h)
-
-        # Generating r: r < p-1, gcd(r, p-1) = 1
-        r = random.randint(0, self.p - 2)
-        while self.numTheory.gcd(r, self.p - 1) != 1:
-            r = random.randint(0, self.p - 1)
-
-        # Calculating y = g^r mod p
-        y = self.numTheory.modexp(self.g, r, self.p)
-
-        # s = (message - a^y)(r^-1) mod p-1
-        rInv = self.numTheory.inv_modulo(r, self.p - 1)
-        logging.info("r: {}, rinv: {}".format(r, rInv))
-
-        s = (h - pow(self.x, y, self.p - 1)) * rInv % self.p - 1
-
-        logging.info("({} - {}^{})*{} mod {} = {}".format(h, self.x, y, rInv, (self.p - 1), s))
-
-        self.signature = (y, s)
-
-
-class ElGamalDecryption():
-    def __init__(self, message, publickey, signature):
-        """
-        ElGamal decryption client.
-
-        :param message: string
-        :param publickey: (g, b, p)
-        :param signature: (y, s)
-        """
-        hash = NumTheory().hash
-        # logging.info("{0} {1}".format(publickey, signature))
-
-        self.publicKey = publickey
-        self.signature = signature
-
-        self.message = message
-        self.messageHash = hash(message)
-
-    def check(self):
-        """
-        Checks if signature correct.
-
-        :return: True or False
-        """
-        modexp = NumTheory.modexp
-
-        g, b, p = self.publicKey
-        y, s = self.signature
-        h = self.messageHash
-
-        # y, s < p
-        if not (0 < y < p):
-            return False
-        if not (0 < s < p - 1):
-            logging.info("1")
-            return False
-
-        v1 = modexp(y, s, p) * modexp(b, y, p) % p
-        v2 = modexp(g, h, p)
-
-        if v1 == v2:
-            logging.info("2")
-
-            return True
-        else:
-            logging.info("{}, {}".format(v1, v2))
-
-            return False
